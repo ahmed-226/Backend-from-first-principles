@@ -358,8 +358,8 @@ flowchart TD
     Validate -->|Valid| Running["Application Running ✓"]
     Validate -->|Invalid| Error["Error & Exit"]
 
-    style Running fill:#c6efce
-    style Error fill:#ffc7ce
+    style Running fill:#c6efce,color:#000
+    style Error fill:#ffc7ce,color:#000
 ```
 
 ---
@@ -392,10 +392,10 @@ graph TB
         Prod_Config["High availability<br/>Encryption enabled<br/>Monitoring active<br/>Rate limiting"]
     end
 
-    style Dev fill:#fff9e6
-    style Test fill:#e3f2fd
-    style Staging fill:#f3e5f5
-    style Prod fill:#ffebee
+    style Dev fill:#fff9e6,color:#000
+    style Test fill:#e3f2fd,color:#000
+    style Staging fill:#f3e5f5,color:#000
+    style Prod fill:#ffebee,color:#000
 ```
 
 ### Real Example: Database Connection Pool Size
@@ -482,11 +482,11 @@ graph LR
     D -->|Encrypted| E["Network"]
     E -->|Decrypted with Key| C
 
-    
-    style A fill:#ffcccc
-    style B fill:#ff9999
-    style D fill:#66bb6a
-    style C fill:#42a5f5
+
+    style A fill:#ffcccc,color:#000
+    style B fill:#ff9999,color:#000
+    style D fill:#66bb6a,color:#000
+    style C fill:#42a5f5,color:#000
 ```
 
 **Handled automatically by services like Vault/AWS Parameter Store:**
@@ -508,32 +508,227 @@ graph TD
 
     DevOpsTeam["DevOps Team"] -->|Access| Infra_Access["✓ All infrastructure<br/>✓ All secrets<br/>✓ Cloud provider keys"]
 
-    style FrontendTeam fill:#e3f2fd
-    style BackendTeam fill:#f3e5f5
-    style DevOpsTeam fill:#fff3e0
-    style Frontend_Creds fill:#c6efce
-    style Backend_Secrets fill:#ffc7ce
-    style Backend_Access fill:#c6efce
-    style Infra_Secrets fill:#ffc7ce
-    style Infra_Access fill:#c6efce
+    style FrontendTeam fill:#e3f2fd,color:#000
+    style BackendTeam fill:#f3e5f5,color:#000
+    style DevOpsTeam fill:#fff3e0,color:#000
+    style Frontend_Creds fill:#c6efce,color:#000
+    style Backend_Secrets fill:#ffc7ce,color:#000
+    style Backend_Access fill:#c6efce,color:#000
+    style Infra_Secrets fill:#ffc7ce,color:#000
+    style Infra_Access fill:#c6efce,color:#000
 ```
 
 ### 4. Secret Rotation
 
-**Implement regular rotation:**
+#### What is Secret Rotation?
+
+Secret rotation is the process of **periodically changing your sensitive credentials** (passwords, API keys, JWT secrets, certificates, etc.) and replacing old ones with new ones. It's like changing the locks on your house every few months as a security measure.
+
+**Example:**
+
+```
+Week 1: Use JWT Secret "abc123xyz"
+       ↓
+Week 2-3: Still using "abc123xyz"
+       ↓
+Week 4: Generate new secret "new456uvw"
+       ↓
+Week 5: Transition to new secret (both work temporarily)
+       ↓
+Week 6: Old secret "abc123xyz" is invalidated
+```
+
+#### Why is Secret Rotation Critical?
+
+**Scenario 1: Insider Threat**
+
+```
+A former employee still has access to the old database password.
+- Without rotation: They can access production data indefinitely.
+- With rotation: Their access is automatically revoked after rotation.
+```
+
+**Scenario 2: Secret Exposed in Git History**
+
+```
+A developer accidentally committed an API key in code 6 months ago.
+- Without rotation: The exposed key still works and attackers can use it.
+- With rotation: The old key is dead, the new key is safe.
+```
+
+**Scenario 3: Compromised Server**
+
+```
+Attacker gained temporary access to a server and extracted the JWT secret.
+- Without rotation: They can forge tokens indefinitely.
+- With rotation: The stolen secret becomes useless after rotation.
+```
+
+**Scenario 4: Third-Party Breach**
+
+```
+Your payment processor (Stripe) experiences a breach.
+- Without rotation: Your old API keys are compromised.
+- With rotation: Only the current key is at risk; old ones are already replaced.
+```
+
+#### How Secret Rotation Works: Step-by-Step
+
+```mermaid
+sequenceDiagram
+    participant System as Your System
+    participant SecretManager as Secrets Manager<br/>(Vault/AWS)
+    participant App as Running Applications
+    participant OldSecret as Old Secret
+    participant NewSecret as New Secret
+
+    System->>SecretManager: Request to rotate secret
+    SecretManager->>NewSecret: Generate new secret
+    SecretManager->>OldSecret: Mark old secret
+    SecretManager->>App: Update with BOTH secrets<br/>(grace period)
+    App->>App: Accept both old & new<br/>for 24-48 hours
+    App->>App: Start using new secret<br/>for NEW operations
+    SecretManager->>OldSecret: Disable old secret
+    Note over OldSecret: Old secret no longer works
+    App->>App: Only new secret accepted<br/>from now on
+```
+
+**The Grace Period is Crucial:**
+
+Without a grace period (typically 24-48 hours), you risk:
+
+- Rejecting legitimate requests still using the old secret
+- Throwing errors for users/services that haven't updated yet
+- Cascading failures across your system
+
+#### Real-World Implementation Example
+
+```javascript
+// Before rotation: System expects specific secret
+const verifyToken = (token) => {
+  return jwt.verify(token, process.env.JWT_SECRET);
+};
+
+// During rotation: System accepts BOTH secrets
+const verifyToken = (token) => {
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET); // New secret
+  } catch (err) {
+    return jwt.verify(token, process.env.JWT_SECRET_OLD); // Old secret (grace period)
+  }
+};
+
+// After grace period: Only new secret
+const verifyToken = (token) => {
+  return jwt.verify(token, process.env.JWT_SECRET);
+};
+```
+
+#### Types of Secrets to Rotate
+
+| Secret Type             | Rotation Frequency         | Risk if Not Rotated              |
+| ----------------------- | -------------------------- | -------------------------------- |
+| **JWT Secrets**         | Every 3 months             | Attackers forge user tokens      |
+| **Database Passwords**  | Every 3-6 months           | Compromised database access      |
+| **API Keys**            | Every 2-3 months           | Unauthorized API usage           |
+| **SSL Certificates**    | Before expiration (1 year) | Service outage, security warning |
+| **OAuth Tokens**        | Every 1-3 months           | Unauthorized user access         |
+| **Stripe/Payment Keys** | Every quarter              | Fraudulent transactions          |
+| **SSH Keys**            | Every 6 months             | Unauthorized server access       |
+
+#### Rotation Schedule for Production
 
 ```mermaid
 timeline
-    title Secret Rotation Schedule
+    title Secret Rotation Schedule (Quarterly)
     Q1 : Rotate JWT Secrets
        : Rotate Database Credentials
+       : Audit all active keys
     Q2 : Rotate API Keys
        : Rotate Stripe Credentials
+       : Update documentation
     Q3 : Rotate All Certificates
        : Rotate OAuth Tokens
+       : Security review
     Q4 : Comprehensive Audit
        : Full credential refresh
+       : Plan next year's strategy
 ```
+
+#### Common Rotation Patterns
+
+**Pattern 1: Blue-Green Rotation (Safest)**
+
+It mean s deploying the new secret to a standby environment, testing it, and then switching traffic over once it's verified to work.
+
+```
+Blue Environment (Active)  →  Green Environment (Standby)
+Uses Secret V1             →   Upgraded to Secret V2
+                           ↓
+When ready, switch traffic to Green
+Old Blue can be disposed of
+```
+
+**Pattern 2: Rolling Rotation (Distributed Systems)**
+
+It means updating secrets on a few instances at a time, allowing for a gradual transition without downtime.
+
+```
+Instance 1: Switch from Secret V1 → Secret V2
+Wait 5 minutes ✓
+Instance 2: Switch from Secret V1 → Secret V2
+Wait 5 minutes ✓
+Instance 3: Switch from Secret V1 → Secret V2
+Result: Zero downtime
+```
+
+**Pattern 3: Immediate Rotation (Emergency)**
+
+```
+Secret compromised! → Generate new secret immediately
+→ Immediately update all environments
+→ Risk: Might cause temporary errors for in-flight requests
+```
+
+#### Tools That Automate Rotation
+
+| Tool                    | Capability                    |
+| ----------------------- | ----------------------------- |
+| **HashiCorp Vault**     | Built-in rotation policies    |
+| **AWS Secrets Manager** | Automatic rotation scheduling |
+| **Azure Key Vault**     | Automatic rotation templates  |
+| **Kubernetes Secrets**  | Manual rotation via operators |
+
+#### Why Many Teams Fail at Rotation
+
+❌ **Mistake 1: Never Implementing It**
+
+- "We'll rotate manually when we remember"
+- Reality: Nobody remembers, secrets get stale
+
+❌ **Mistake 2: Too Long Grace Period**
+
+- Setting 30-day grace period
+- Attackers have 30 days to exploit old secret
+
+❌ **Mistake 3: Forgetting Some Secrets**
+
+- Rotating JWT but forgetting database password
+- System is only as secure as the weakest secret
+
+❌ **Mistake 4: No Testing Before Rotation**
+
+- Rotating in production without testing
+- Causes unexpected outages
+
+✅ **Best Practices for Successful Rotation**
+
+- Automate the rotation process (don't rely on manual steps)
+- Use 24-48 hour grace period (balance between security and reliability)
+- Test rotation procedure in staging first
+- Monitor logs during rotation for errors
+- Keep rotation schedule consistent and documented
+- Rotate ALL secrets, not just some
 
 ### 5. Validation: Critical!
 
