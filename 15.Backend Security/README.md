@@ -83,28 +83,24 @@ The goal is not perfection but **continuous improvement** and **layered defense*
 Security operates at multiple levels:
 
 ```mermaid
-graph TB
+graph LR
     subgraph "Security Layers"
         A["Browser Security<br/>HTML, Cookies, Local Storage<br/>DOM, JavaScript Execution"]
         B["Network Security<br/>HTTP vs HTTPS<br/>Encryption, Compression"]
         C["Server/OS Security<br/>Operating System<br/>File Permissions, User Access"]
         D["Backend Application Security<br/>Application Code<br/>Data Handling, Business Logic"]
     end
-    
-    User["User/Browser"]
-    Internet["Internet"]
-    OS["Operating System"]
-    App["Backend Application"]
+
     
     User --> A
     A --> B
     B --> C
     C --> D
     
-    style A fill:#FFE4B5
-    style B fill:#87CEEB
-    style C fill:#90EE90
-    style D fill:#FFB6C6
+    style A fill:#FFE4B5,color:#000
+    style B fill:#87CEEB,color:#000
+    style C fill:#90EE90,color:#000
+    style D fill:#FFB6C6,color:#000
 ```
 
 ### Focus: Backend Application Security
@@ -173,10 +169,10 @@ graph TB
     APP -->|HTML/CSS/JS| BROWSER["Browser"]
     APP -->|Shell Commands| OS["Operating System"]
     
-    style APP fill:#FFE4B5
-    style DB fill:#87CEEB
-    style BROWSER fill:#90EE90
-    style OS fill:#FFB6C6
+    style APP fill:#FFE4B5,color:#000
+    style DB fill:#87CEEB,color:#000
+    style BROWSER fill:#90EE90,color:#000
+    style OS fill:#FFB6C6,color:#000
 ```
 
 ### Language Boundary Crossings
@@ -192,7 +188,7 @@ Each language has:
 ### The Injection Attack Pattern
 
 ```mermaid
-graph TD
+graph LR
     A["User Input<br/>One Language Context"]
     B["Treated as Data<br/>But Contains Special Chars"]
     C["System Interprets as Code<br/>Different Language Context"]
@@ -202,10 +198,10 @@ graph TD
     B --> C
     C --> D
     
-    style A fill:#FFE4B5
-    style B fill:#FFB6C6
-    style C fill:#FFB6C6
-    style D fill:#FF6B6B
+    style A fill:#FFE4B5,color:#000
+    style B fill:#FFB6C6,color:#000
+    style C fill:#FFB6C6,color:#000
+    style D fill:#FF6B6B,color:#000
 ```
 
 ### Root Cause: Code/Data Confusion
@@ -449,12 +445,12 @@ graph TB
     ROOT --> D
     ROOT --> E
     
-    style ROOT fill:#FFE4B5
-    style A fill:#87CEEB
-    style B fill:#87CEEB
-    style C fill:#87CEEB
-    style D fill:#87CEEB
-    style E fill:#87CEEB
+    style ROOT fill:#FFE4B5,color:#000
+    style A fill:#87CEEB,color:#000
+    style B fill:#87CEEB,color:#000
+    style C fill:#87CEEB,color:#000
+    style D fill:#87CEEB,color:#000
+    style E fill:#87CEEB,color:#000
 ```
 
 ### Prevention Pattern for All Injections
@@ -471,7 +467,7 @@ graph TB
 
 ### Beyond the Scope of This Guide
 
-This guide assumes you're familiar with authentication concepts. For detailed coverage, see the dedicated authentication video.
+This guide assumes you're familiar with authentication concepts. For detailed coverage, see the dedicated authentication video/lecture.
 
 ### Authentication Providers: A Practical Recommendation
 
@@ -545,7 +541,7 @@ Properties:
 ### Hash Functions: Algorithm Comparison
 
 ```mermaid
-graph TB
+graph LR
     subgraph "Algorithm Quality"
         A["❌ MD5<br/>Broken, Collisions Found<br/>Use: Never"]
         B["❌ SHA1<br/>Weaknesses Discovered<br/>Use: Legacy only"]
@@ -555,12 +551,12 @@ graph TB
         F["✓ scrypt<br/>Memory-hard, Slow<br/>Use: Passwords"]
     end
     
-    style A fill:#FF6B6B
-    style B fill:#FF6B6B
-    style C fill:#FFD93D
-    style D fill:#6BCF7F
-    style E fill:#6BCF7F
-    style F fill:#6BCF7F
+    style A fill:#FF6B6B,color:#000
+    style B fill:#FF6B6B,color:#000
+    style C fill:#FFD93D,color:#000
+    style D fill:#6BCF7F,color:#000
+    style E fill:#6BCF7F,color:#000
+    style F fill:#6BCF7F,color:#000
 ```
 
 ### Why NOT SHA256 for Passwords?
@@ -578,7 +574,7 @@ graph TB
 Algorithms must have these properties:
 
 ```mermaid
-graph TB
+graph LR
     subgraph "Password Hash Requirements"
         A["Slow<br/>Takes seconds per hash<br/>Makes brute force impractical"]
         B["Computationally Expensive<br/>Uses CPU and/or Memory<br/>Limits parallelization"]
@@ -586,10 +582,10 @@ graph TB
         D["Deterministic<br/>Same input = same output<br/>For verification"]
     end
     
-    style A fill:#90EE90
-    style B fill:#90EE90
-    style C fill:#90EE90
-    style D fill:#90EE90
+    style A fill:#90EE90,color:#000
+    style B fill:#90EE90,color:#000
+    style C fill:#90EE90,color:#000
+    style D fill:#90EE90,color:#000
 ```
 
 ### Bcrypt Example
@@ -619,6 +615,10 @@ bcrypt.compare("myPassword123", storedHash)
 - Same password + different salt = different hash
 - Makes rainbow tables impractical
 - Doubles computation for attackers
+
+> **Note:** Rainbow tables are precomputed hash lists for common passwords. Salting makes them ineffective, example: "password123" always hashes to the same value without salt, but with salt it hashes to different values for each user.
+
+> **Note:** Bcrypt/Argon2/scrypt handle salting internally. Don't implement your own.
 
 ### Cost Factor (Work Factor)
 
@@ -657,17 +657,17 @@ graph TB
         B5["Server verifies signature"]
     end
     
-    style A1 fill:#87CEEB
-    style A2 fill:#87CEEB
-    style A3 fill:#87CEEB
-    style A4 fill:#87CEEB
-    style A5 fill:#87CEEB
+    style A1 fill:#87CEEB,color:#000
+    style A2 fill:#87CEEB,color:#000
+    style A3 fill:#87CEEB,color:#000
+    style A4 fill:#87CEEB,color:#000
+    style A5 fill:#87CEEB,color:#000
     
-    style B1 fill:#90EE90
-    style B2 fill:#90EE90
-    style B3 fill:#90EE90
-    style B4 fill:#90EE90
-    style B5 fill:#90EE90
+    style B1 fill:#90EE90,color:#000
+    style B2 fill:#90EE90,color:#000
+    style B3 fill:#90EE90,color:#000
+    style B4 fill:#90EE90,color:#000
+    style B5 fill:#90EE90,color:#000
 ```
 
 ### Session ID Security
@@ -708,9 +708,9 @@ graph TB
         C["SameSite=None<br/>Least Secure<br/>All cross-site requests<br/>Requires Secure flag"]
     end
     
-    style A fill:#6BCF7F
-    style B fill:#FFD93D
-    style C fill:#FF6B6B
+    style A fill:#6BCF7F,color:#000
+    style B fill:#FFD93D,color:#000
+    style C fill:#FF6B6B,color:#000
 ```
 
 ### Session Storage Considerations
@@ -765,10 +765,10 @@ graph TB
     B --> D
     C --> D
     
-    style A fill:#FFE4B5
-    style B fill:#87CEEB
-    style C fill:#FFB6C6
-    style D fill:#90EE90
+    style A fill:#FFE4B5,color:#000
+    style B fill:#87CEEB,color:#000
+    style C fill:#FFB6C6,color:#000
+    style D fill:#90EE90,color:#000
 ```
 
 ### JWT Claims
@@ -944,7 +944,7 @@ CSRF happens because:
 ### Layered Defense (Defense in Depth)
 
 ```mermaid
-graph TB
+graph LR
     subgraph "Defense Layers"
         L1["Layer 1: Input Validation<br/>Parameterized queries<br/>Framework APIs<br/>Escape functions"]
         L2["Layer 2: Authentication<br/>Verify user identity<br/>Secure password storage<br/>Session management"]
@@ -961,11 +961,11 @@ graph TB
     L3 --> L4
     L4 --> L5
     
-    style L1 fill:#6BCF7F
-    style L2 fill:#6BCF7F
-    style L3 fill:#6BCF7F
-    style L4 fill:#FFD93D
-    style L5 fill:#FFD93D
+    style L1 fill:#6BCF7F,color:#000
+    style L2 fill:#6BCF7F,color:#000
+    style L3 fill:#6BCF7F,color:#000
+    style L4 fill:#FFD93D,color:#000
+    style L5 fill:#FFD93D,color:#000
 ```
 
 ### Layer 1: Input Validation & Injection Prevention
@@ -1054,10 +1054,10 @@ graph TB
     
     C --> D["Example:<br/>XSS vulnerability?<br/>→ CSP header limits damage"]
     
-    style A fill:#FF6B6B
-    style B fill:#6BCF7F
-    style C fill:#FFD93D
-    style D fill:#FFD93D
+    style A fill:#FF6B6B,color:#000
+    style B fill:#6BCF7F,color:#000
+    style C fill:#FFD93D,color:#000
+    style D fill:#FFD93D,color:#000
 ```
 
 ---
@@ -1166,29 +1166,36 @@ Infrastructure:
 
 ```mermaid
 graph TB
-    subgraph "OWASP Top 10 Vulnerabilities"
-        A["1. Broken Access Control<br/>Failure of authorization<br/>IDOR, broken function<br/>level authorization"]
-        B["2. Cryptographic Failures<br/>Exposed sensitive data<br/>Weak encryption<br/>Poor TLS configuration"]
-        C["3. Injection<br/>SQL, OS, LDAP injection<br/>User input in code"]
-        D["4. Insecure Design<br/>Missing security controls<br/>Insecure requirements"]
-        E["5. Security Misconfiguration<br/>Default credentials<br/>Unnecessary features<br/>Old frameworks"]
-        F["6. Vulnerable/Outdated<br/>Components<br/>Known vulnerabilities<br/>Unpatched libraries"]
-        G["7. Authentication Failures<br/>Weak password<br/>Session fixation<br/>Credential stuffing"]
-        H["8. Software/Data<br/>Integrity Failures<br/>Insecure CI/CD<br/>Unsigned updates"]
-        I["9. Logging/Monitoring<br/>Failures<br/>Missing logs<br/>No alerting"]
-        J["10. SSRF<br/>Server-Side Request<br/>Forgery"]
+
+    subgraph Col3
+        G["7. Authentication Failures"]
+        H["8. Software/Data Integrity"]
+        I["9. Logging/Monitoring Failures"]
+        J["10. SSRF"]
     end
-    
-    style A fill:#FF6B6B
-    style B fill:#FF6B6B
-    style C fill:#FF6B6B
-    style D fill:#FF6B6B
-    style E fill:#FF6B6B
-    style F fill:#FF6B6B
-    style G fill:#FF6B6B
-    style H fill:#FF6B6B
-    style I fill:#FF6B6B
-    style J fill:#FF6B6B
+    subgraph Col2
+        D["4. Insecure Design"]
+        E["5. Security Misconfiguration"]
+        F["6. Vulnerable Components"]
+    end
+
+    subgraph Col1
+        A["1. Broken Access Control"]
+        B["2. Cryptographic Failures"]
+        C["3. Injection"]
+    end
+
+
+    style A fill:#FF6B6B,color:#000
+    style B fill:#FF6B6B,color:#000
+    style C fill:#FF6B6B,color:#000
+    style D fill:#FF6B6B,color:#000
+    style E fill:#FF6B6B,color:#000
+    style F fill:#FF6B6B,color:#000
+    style G fill:#FF6B6B,color:#000
+    style H fill:#FF6B6B,color:#000
+    style I fill:#FF6B6B,color:#000
+    style J fill:#FF6B6B,color:#000
 ```
 
 **OWASP Cheat Sheets:** owasp.org/cheatsheets

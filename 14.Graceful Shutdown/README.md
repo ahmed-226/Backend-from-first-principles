@@ -112,9 +112,9 @@ graph LR
     A["Process Creation<br/>(Birth)"] --> B["Process Execution<br/>(Life)"]
     B --> C["Process Termination<br/>(Death)"]
     
-    style A fill:#90EE90
-    style B fill:#87CEEB
-    style C fill:#FFB6C6
+    style A fill:#90EE90,color:#000
+    style B fill:#87CEEB,color:#000
+    style C fill:#FFB6C6,color:#000
 ```
 
 ### Process Lifecycle States
@@ -183,8 +183,8 @@ graph TB
     SIGINT --> Graceful
     SIGKILL --> Force["Cannot be caught<br/>Immediate termination"]
     
-    style Graceful fill:#90EE90
-    style Force fill:#FFB6C6
+    style Graceful fill:#90EE90,color:#000
+    style Force fill:#FFB6C6,color:#000
 ```
 
 ### Signal Details
@@ -278,8 +278,8 @@ graph TB
     B --> D["✓ Graceful shutdown<br/>Success"]
     C --> E["✗ Incomplete cleanup<br/>Resource leaks possible"]
     
-    style D fill:#90EE90
-    style E fill:#FFB6C6
+    style D fill:#90EE90,color:#000
+    style E fill:#FFB6C6,color:#000
 ```
 
 **Typical Timeout**: 30 seconds (configurable)
@@ -301,10 +301,10 @@ flowchart TD
     G --> H["8. Log Shutdown<br/>Completion"]
     H --> I["9. Exit Process"]
     
-    style A fill:#FFE4B5
-    style I fill:#FFB6C6
-    style B fill:#87CEEB
-    style C fill:#87CEEB
+    style A fill:#FFE4B5,color:#000
+    style I fill:#FFB6C6,color:#000
+    style B fill:#87CEEB,color:#000
+    style C fill:#87CEEB,color:#000
 ```
 
 ### Detailed Shutdown Sequence
@@ -425,12 +425,12 @@ graph TD
     D --> E["5. Clean Up Config"]
     E --> F["6. Exit Process"]
     
-    style A fill:#FFE4B5
-    style B fill:#87CEEB
-    style C fill:#87CEEB
-    style D fill:#87CEEB
-    style E fill:#87CEEB
-    style F fill:#FFB6C6
+    style A fill:#FFE4B5,color:#000
+    style B fill:#87CEEB,color:#000
+    style C fill:#87CEEB,color:#000
+    style D fill:#87CEEB,color:#000
+    style E fill:#87CEEB,color:#000
+    style F fill:#FFB6C6,color:#000
 ```
 
 ### Why Reverse Order?
@@ -472,8 +472,8 @@ graph TB
     HTTP --> DBPOOL
     JOBS --> DBPOOL
     
-    classDef resource fill:#87CEEB
-    class HTTP CONNS DBPOOL JOBS resource
+    classDef resource fill:#87CEEB,color:#000
+    class HTTP,CONNS,DBPOOL,JOBS resource
 ```
 
 ---
@@ -683,12 +683,12 @@ graph TB
     GS --> B4["System Reliability<br/>Predictable behavior"]
     GS --> B5["Deployment Safety<br/>Zero downtime"]
     
-    style GS fill:#FFE4B5
-    style B1 fill:#90EE90
-    style B2 fill:#90EE90
-    style B3 fill:#90EE90
-    style B4 fill:#90EE90
-    style B5 fill:#90EE90
+    style GS fill:#FFE4B5,color:#000
+    style B1 fill:#90EE90,color:#000
+    style B2 fill:#90EE90,color:#000
+    style B3 fill:#90EE90,color:#000
+    style B4 fill:#90EE90,color:#000
+    style B5 fill:#90EE90,color:#000
 ```
 
 ### Final Notes
