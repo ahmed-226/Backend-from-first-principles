@@ -24,7 +24,7 @@
 
 Statelessness is the **foundational property** that makes horizontal scaling possible. In a horizontally scaled system, you run multiple identical instances of your backend server. For this to work correctly, **no single instance can hold data that is exclusive to it**.
 
-> **Stateful** = A server remembers information about a client and stores it internally.
+> **Stateful** = A server remembers information about a client and stores it internally. <br>
 > **Stateless** = No server instance holds any exclusive data; every request can be handled by any instance with identical results.
 
 ### The Core Principle
@@ -36,7 +36,7 @@ flowchart LR
     A["Instance A"]
     B["Instance B"]
     C["Instance C"]
-    EXT[("External Shared Storage\n(Redis, S3, DB)")]
+    EXT[("External Shared Storage<br>(Redis, S3, DB)")]
 
     Users --> LB
     LB --> A & B & C
@@ -98,7 +98,7 @@ flowchart TD
         U3(["User 3"])
     end
 
-    LB["⚖️ Load Balancer\n(Single entry point)"]
+    LB["⚖️ Load Balancer<br>(Single entry point)"]
 
     subgraph Servers
         A["Server A"]
@@ -156,9 +156,9 @@ The client's IP address is hashed to always route that client to the same server
 
 ```mermaid
 flowchart LR
-    LB["Load Balancer\n(IP Hash)"]
-    A["Server A\n(User from IP 192.x.x.x)"]
-    B["Server B\n(User from IP 10.x.x.x)"]
+    LB["Load Balancer<br>(IP Hash)"]
+    A["Server A<br>(User from IP 192.x.x.x)"]
+    B["Server B<br>(User from IP 10.x.x.x)"]
 
     LB -->|"hash(192.x.x.x) → A"| A
     LB -->|"hash(10.x.x.x) → B"| B
@@ -182,13 +182,61 @@ Beyond routing, load balancers also provide:
 - **SSL termination** — handle the HTTPS encryption/decryption at the load balancer level, reducing the burden on backend servers.
 - **Rate limiting** — throttle traffic from specific IPs or clients to prevent abuse.
 
+### How Load Balancers Work
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant DNS as DNS
+    participant LB as Load Balancer
+    participant Pool as Backend Pool
+
+    Client->>DNS: Resolve domain name
+    DNS-->>Client: LB Virtual IP
+    Client->>LB: Request arrives at Virtual IP
+    Note over LB: Terminate connection, inspect packet
+
+    par Continuous Health Checks
+        LB->>Pool: GET /health (every N seconds)
+        Pool-->>LB: 200 OK
+    end
+
+    Note over LB: Select backend via algorithm
+
+    LB->>Pool: Forward request (DNAT / proxy mode)
+    Pool-->>LB: Response
+    LB-->>Client: Return response
+```
+
+**Key concepts mapped:**
+
+| Concept | Description |
+|---|---|
+| **Virtual IP (VIP)** | A single IP representing the entire backend pool; all client traffic is sent here |
+| **Backend Pool** | The group of servers behind the LB that traffic is distributed across |
+| **Health Checks** | LB pings each backend periodically; failing servers are removed from rotation automatically |
+| **Connection Draining** | Before removing a backend (e.g., during deployment), LB waits for in-flight requests to finish before cutting off new traffic |
+| **SNAT / DNAT** | Address translation the LB uses to route traffic correctly between client and backend |
+
 ### Popular Load Balancer Solutions
 
-| Type | Examples |
-|---|---|
-| **Managed Cloud** | AWS ALB/ELB, GCP Load Balancer, Azure LB |
-| **Software** | Nginx, HAProxy, Traefik |
-| **API Gateway (includes LB)** | AWS API Gateway, Kong, Cloudflare |
+| Type | Examples | How It Runs | Key Characteristics | Best For |
+|---|---|---|---|---|
+| **Managed Cloud LB** | AWS ALB/ELB, GCP LB, Azure LB | Cloud provider infrastructure | Fully managed, auto-scales, integrated with cloud services, pay-as-you-go, vendor-locked | Teams already on that cloud; simplest setup |
+| **Software LB** | Nginx, HAProxy, Traefik | Your own server or VM as a process | Open-source, full control, highly customizable, runs anywhere (any cloud or on-prem), you manage updates & scaling | Teams needing flexibility, multi-cloud, on-premises, or fine-grained control |
+| **API Gateway** | AWS API Gateway, Kong, Cloudflare | Managed or self-hosted; sits in front of services | All LB capabilities + **API-level features**: auth, API key management, request/response transformation, rate limiting per client, caching, API versioning, request validation | Microservices with multiple public APIs needing auth, throttling, and routing at the entry point |
+
+A **Managed cloud LB** is the easiest to set up and maintain, but it locks you into a specific cloud provider. A software LB gives you full control and flexibility but requires more operational overhead. An API gateway is ideal for complex microservices architectures with public APIs that need authentication and rate limiting.
+
+A **software load balancer** (Nginx, HAProxy, Traefik) operates at the transport or HTTP level — it routes traffic based on IP, port, hostname, or URL path. It does not understand your application's API structure (auth tokens, API keys, request/response schemas). It forwards raw packets or HTTP requests to backends.
+
+An **API gateway** builds on top of that by understanding your **application layer** — it can authenticate requests, validate API keys, transform request/response formats, enforce rate limits per API consumer, cache responses, and route to different service versions. It is a load balancer plus an API management layer.
+
+**Simplified decision guide:**
+
+- Just need to distribute traffic across servers? → **Managed Cloud LB** or **Software LB**
+- Need to run it yourself or cross-cloud / on-prem? → **Software LB**
+- Need to manage public APIs (auth, keys, throttling, versioning)? → **API Gateway**
 
 ---
 
@@ -202,7 +250,7 @@ flowchart TD
     A["App Server A"]
     B["App Server B"]
     C["App Server C"]
-    DB[("Single Database\n⚠️ Bottleneck")]
+    DB[("Single Database<br>⚠️ Bottleneck")]
 
     LB --> A & B & C
     A & B & C --> DB
@@ -219,13 +267,13 @@ The most common first step in database scaling.
 ```mermaid
 flowchart TD
     App["Application Servers"]
-    Write["✏️ Write Query\n(INSERT / UPDATE / DELETE)"]
-    Read["👁️ Read Query\n(SELECT)"]
+    Write["✏️ Write Query<br>(INSERT / UPDATE / DELETE)"]
+    Read["👁️ Read Query<br>(SELECT)"]
 
-    Primary[("Primary DB\n(Handles all writes)")]
-    Replica1[("Replica 1\n🇮🇳 India Region")]
-    Replica2[("Replica 2\n🇯🇵 Japan Region")]
-    Replica3[("Replica 3\n🇺🇸 US East")]
+    Primary[("Primary DB<br>(Handles all writes)")]
+    Replica1[("Replica 1<br>🇮🇳 India Region")]
+    Replica2[("Replica 2<br>🇯🇵 Japan Region")]
+    Replica3[("Replica 3<br>🇺🇸 US East")]
 
     App --> Write & Read
     Write --> Primary
@@ -273,10 +321,10 @@ Sharding solves two problems that replicas cannot: **query latency at massive sc
 ```mermaid
 flowchart TD
     App["Application / Router Layer"]
-    Logic{"Shard Router\nWhich shard holds this data?"}
+    Logic{"Shard Router<br>Which shard holds this data?"}
 
-    Shard1[("Shard 1\nOrders: Jan–Jun\n5 billion rows")]
-    Shard2[("Shard 2\nOrders: Jul–Dec\n5 billion rows")]
+    Shard1[("Shard 1<br>Orders: Jan–Jun<br>5 billion rows")]
+    Shard2[("Shard 2<br>Orders: Jul–Dec<br>5 billion rows")]
 
     App --> Logic
     Logic -->|"order_date < July"| Shard1
@@ -326,12 +374,12 @@ Add database queries (~50–100ms), business logic, and external API calls — a
 ```mermaid
 graph TB
     subgraph Before CDN
-        TK1(["User in Tokyo"]) -->|"20,000km round trip\n~100ms minimum"| US1[("Origin Server\nUS East")]
+        TK1(["User in Tokyo"]) -->|"20,000km round trip<br>~100ms minimum"| US1[("Origin Server<br>US East")]
     end
 
     subgraph With CDN
-        TK2(["User in Tokyo"]) -->|"~100km\n~2-3ms"| CDN(["CDN Node\n🗼 Tokyo"])
-        CDN -->|"Cache hit? Serve directly\nCache miss? Fetch from origin"| US2[("Origin Server\nUS East")]
+        TK2(["User in Tokyo"]) -->|"~100km<br>~2-3ms"| CDN(["CDN Node<br>🗼 Tokyo"])
+        CDN -->|"Cache hit? Serve directly<br>Cache miss? Fetch from origin"| US2[("Origin Server<br>US East")]
     end
 ```
 
@@ -355,17 +403,17 @@ A DDoS attack floods your server with traffic from thousands of bots. With a CDN
 
 ```mermaid
 graph TD
-    CDN["CDN Cache"] --> Static["Static Assets\n(Best candidates)"]
-    CDN --> API["API Responses\n(Conditional)"]
+    CDN["CDN Cache"] --> Static["Static Assets<br>(Best candidates)"]
+    CDN --> API["API Responses<br>(Conditional)"]
 
     Static --> JS["JavaScript bundles"]
     Static --> CSS["CSS stylesheets"]
-    Static --> HTML["HTML files\n(SPAs, static sites)"]
+    Static --> HTML["HTML files<br>(SPAs, static sites)"]
     Static --> Media["Images, Videos, Fonts"]
 
-    API --> Catalog["Product catalogs\n(infrequently changing)"]
+    API --> Catalog["Product catalogs<br>(infrequently changing)"]
     API --> Blog["Blog posts / articles"]
-    API --> Public["Any public data\nthat changes rarely"]
+    API --> Public["Any public data<br>that changes rarely"]
 ```
 
 **Cache invalidation (purging):** When data changes (e.g., a user publishes a new blog post), you can programmatically purge specific cached content using tags. Cloudflare, for example, lets you tag cached content by user ID or entity type and purge all related cache entries on update.
@@ -379,15 +427,15 @@ graph TD
 Traditional CDNs only served **static content** — files with no processing. Edge computing extends this by running **actual code** at CDN edge nodes, not just serving cached files.
 
 ```mermaid
-flowchart LR
+graph TB
     subgraph Traditional CDN
         U1["User"] --> N1["CDN Node"]
-        N1 -->|"File exists? Serve it.\nFile missing? Fetch from origin."| U1
+        N1 -->|"File exists? Serve it.<br>File missing? Fetch from origin."| U1
     end
 
     subgraph Edge Computing
         U2["User"] --> N2["Edge Node"]
-        N2 -->|"Run code: auth check,\nlocation routing, A/B test,\nlocalization, etc."| N2
+        N2 -->|"Run code: auth check,<br>location routing, A/B test,<br>localization, etc."| N2
         N2 --> U2
         N2 -.->|"Only if needed"| O2["Origin Server"]
     end
@@ -506,10 +554,10 @@ These are operations where the user **does not need to see the result immediatel
 
 ```mermaid
 flowchart LR
-    API["API Server"] -->|"Enqueue job"| Q[("Message Queue\n(Redis / BullMQ / SQS)")]
+    API["API Server"] -->|"Enqueue job"| Q[("Message Queue<br>(Redis / BullMQ / SQS)")]
     Q -->|"Dequeue"| W1["Worker 1"]
     Q -->|"Dequeue"| W2["Worker 2"]
-    W1 & W2 --> Services["Email / Notification\n/ S3 / External APIs"]
+    W1 & W2 --> Services["Email / Notification<br>/ S3 / External APIs"]
 ```
 
 **Popular tools:**
@@ -529,7 +577,7 @@ flowchart LR
 A **monolith** is a backend where all functionality (authentication, orders, payments, notifications, etc.) lives in a **single deployable unit** — one codebase, one repository, one running process.
 
 ```mermaid
-graph TD
+graph LR
     subgraph Monolith
         Auth["🔐 Auth Module"]
         Orders["📦 Order Module"]
@@ -556,10 +604,10 @@ graph TD
 ```mermaid
 graph TD
     GW["🚪 API Gateway"]
-    AuthSvc["Auth Service\n(Node.js)"]
-    OrderSvc["Order Service\n(Go)"]
-    PaymentSvc["Payment Service\n(Java)"]
-    NotifSvc["Notification Service\n(Python)"]
+    AuthSvc["Auth Service<br>(Node.js)"]
+    OrderSvc["Order Service<br>(Go)"]
+    PaymentSvc["Payment Service<br>(Java)"]
+    NotifSvc["Notification Service<br>(Python)"]
 
     GW --> AuthSvc & OrderSvc & PaymentSvc & NotifSvc
 
@@ -589,13 +637,13 @@ With microservices, scale only the services that need it.
 ```mermaid
 flowchart LR
     subgraph Monolith Scaling Problem
-        M["Whole Monolith\n(Scale ALL or NONE)"]
-        M --> M2["Monolith × 3\n(3× cost including notification)"]
+        M["Whole Monolith<br>(Scale ALL or NONE)"]
+        M --> M2["Monolith × 3<br>(3× cost including notification)"]
     end
 
     subgraph Microservices Scaling
-        PS["Payment Service"] --> PS3["Payment × 3\n(scaled independently)"]
-        NS["Notification Service"] --> NS1["Notification × 1\n(no scaling needed)"]
+        PS["Payment Service"] --> PS3["Payment × 3<br>(scaled independently)"]
+        NS["Notification Service"] --> NS1["Notification × 1<br>(no scaling needed)"]
     end
 ```
 
@@ -658,17 +706,17 @@ Only seriously consider microservices when you have clear answers to these:
 Traditionally, you provision a VM (e.g., an AWS EC2 instance), install an OS, configure your application, and manage that server indefinitely:
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph Traditional Server Model
         direction TB
-        VM["VM / EC2 Instance\n(Always running, always paying)"]
+        VM["VM / EC2 Instance<br>(Always running, always paying)"]
         OS["Ubuntu / Linux OS"]
-        App["Your Application\n(Node.js, Go, etc.)"]
+        App["Your Application<br>(Node.js, Go, etc.)"]
         Config["Nginx, Docker, etc."]
         VM --> OS --> Config --> App
     end
 
-    Note["You manage:\n• OS updates\n• Security patches\n• Scaling config\n• DNS, SSL certs\n• Always paying (even idle)"]
+    Note["You manage:<br>• OS updates<br>• Security patches<br>• Scaling config<br>• DNS, SSL certs<br>• Always paying (even idle)"]
 ```
 
 You pay for the VM 24/7, even when it handles zero requests.
@@ -703,8 +751,8 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    A["First Request\n(after idle)"] -->|"Cold start:\nContainer initializes\n+100-500ms latency"| F["Function Runs"]
-    B["Subsequent Requests\n(within warm window)"] -->|"Warm start:\nNo extra latency"| F
+    A["First Request<br>(after idle)"] -->|"Cold start:<br>Container initializes<br>+100-500ms latency"| F["Function Runs"]
+    B["Subsequent Requests<br>(within warm window)"] -->|"Warm start:<br>No extra latency"| F
     C["After idle period"] -->|"Cold start again"| F
 ```
 
@@ -755,10 +803,10 @@ The biggest mistake in performance engineering is implementing solutions for pro
 ```mermaid
 flowchart TD
     Start["System feels slow?"]
-    Measure["📊 Measure Everything\n(logs, metrics, traces)"]
-    Identify["🔍 Identify the Bottleneck\nWhich component? Which query?"]
-    Solution["🔧 Apply Targeted Solution\n(indexing, caching, scaling, etc.)"]
-    Validate["✅ Validate Improvement\nDid the metric improve?"]
+    Measure["📊 Measure Everything<br>(logs, metrics, traces)"]
+    Identify["🔍 Identify the Bottleneck<br>Which component? Which query?"]
+    Solution["🔧 Apply Targeted Solution<br>(indexing, caching, scaling, etc.)"]
+    Validate["✅ Validate Improvement<br>Did the metric improve?"]
 
     Start --> Measure --> Identify --> Solution --> Validate --> Measure
 ```
@@ -797,15 +845,15 @@ This is the exception to "prefer simple solutions." Observability is not optiona
 
 ```mermaid
 graph LR
-    O["Observability\nfrom Day 1"]
-    O --> L["📝 Logs\n(structured, searchable)"]
-    O --> M["📈 Metrics\n(latency, error rate, throughput)"]
-    O --> T["🔍 Traces\n(per-request lifecycle)"]
+    O["Observability<br>from Day 1"]
+    O --> L["📝 Logs<br>(structured, searchable)"]
+    O --> M["📈 Metrics<br>(latency, error rate, throughput)"]
+    O --> T["🔍 Traces<br>(per-request lifecycle)"]
 
-    L & M & T --> V["Visibility\ninto your system"]
-    V --> A["Proactive alerting\nbefore users notice"]
-    V --> B["Fast diagnosis\nwhen issues occur"]
-    V --> C["Data-driven scaling\ndecisions"]
+    L & M & T --> V["Visibility<br>into your system"]
+    V --> A["Proactive alerting<br>before users notice"]
+    V --> B["Fast diagnosis<br>when issues occur"]
+    V --> C["Data-driven scaling<br>decisions"]
 ```
 
 Without observability, you're guessing. With it, you know:
@@ -834,24 +882,24 @@ Your job as a backend engineer is not to predict every possible failure in advan
 flowchart TD
     Start["System needs more capacity?"]
 
-    Start --> Measure{"Have you measured\nand identified\nthe bottleneck?"}
-    Measure -- No --> Observe["Implement observability\n(logs, metrics, traces) first"]
-    Measure -- Yes --> BN{"What is the\nbottleneck?"}
+    Start --> Measure{"Have you measured<br>and identified<br>the bottleneck?"}
+    Measure -- No --> Observe["Implement observability<br>(logs, metrics, traces) first"]
+    Measure -- Yes --> BN{"What is the<br>bottleneck?"}
 
-    BN -->|"Single server\nrunning out of resources"| VS["Try vertical scaling first\n(cheaper, simpler)"]
-    VS -->|"Max vertical limit reached"| HS["Horizontal scaling\n+ Load Balancer\n(ensure statelessness first)"]
+    BN -->|"Single server<br>running out of resources"| VS["Try vertical scaling first<br>(cheaper, simpler)"]
+    VS -->|"Max vertical limit reached"| HS["Horizontal scaling<br>+ Load Balancer<br>(ensure statelessness first)"]
 
-    BN -->|"Database too slow\n(read-heavy)"| RR["Add Read Replicas"]
-    BN -->|"Database too slow\n(massive data volume)"| SH["Consider Sharding"]
-    BN -->|"Database too slow\n(index problem)"| IDX["Add proper indexes first\n(simplest fix)"]
+    BN -->|"Database too slow<br>(read-heavy)"| RR["Add Read Replicas"]
+    BN -->|"Database too slow<br>(massive data volume)"| SH["Consider Sharding"]
+    BN -->|"Database too slow<br>(index problem)"| IDX["Add proper indexes first<br>(simplest fix)"]
 
-    BN -->|"High perceived latency\n(non-critical operations)"| AQ["Async Queue\n(emails, notifications, etc.)"]
+    BN -->|"High perceived latency<br>(non-critical operations)"| AQ["Async Queue<br>(emails, notifications, etc.)"]
 
-    BN -->|"Global users\nstatic content slow"| CDN["Add CDN Layer"]
+    BN -->|"Global users<br>static content slow"| CDN["Add CDN Layer"]
 
-    BN -->|"Team of 100+\nblocking each other"| MS["Consider Microservices\n(carefully)"]
+    BN -->|"Team of 100+<br>blocking each other"| MS["Consider Microservices<br>(carefully)"]
 
-    BN -->|"Infrequent heavy tasks\n(video processing, etc.)"| SLS["Consider Serverless\nfor those tasks"]
+    BN -->|"Infrequent heavy tasks<br>(video processing, etc.)"| SLS["Consider Serverless<br>for those tasks"]
 ```
 
 ---
